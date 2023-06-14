@@ -1,0 +1,137 @@
+---
+title: "Untitled"
+author: "CID:02048495"
+date: "2023-06-06"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(spatstat)
+library(ggplot2)
+setwd("C:/Users/victo/OneDrive/Desktop/project")
+
+metdf <- read.table('smolmerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "character","NULL","character","NULL", "NULL"))
+citydf <- read.table('citymerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "character","NULL","character","NULL", "NULL"))
+can = read.table('cam.csv',sep=",",header =TRUE)
+findf = rbind(metdf, citydf)
+findf1 <- subset(findf,Latitude > 51.52 )
+findf1 <- subset(findf1,Latitude < 51.57 )
+findf1 <- subset(findf1,Longitude > -0.206)
+findf1 <- subset(findf1,Longitude < -0.106)
+
+findf1$Latitude = findf1$Latitude * 111000
+findf1$Longitude = findf1$Longitude * 111000
+can = read.table('cam1.csv',sep=",",header =TRUE,  colClasses = c( "character", "NULL", "NULL", "NULL"))
+colnames(can)[1] = "LSOA.code"
+test = merge(x = can, y = findf1, by = "LSOA.code" )
+findf1 = test[2:4]
+findf2 = findf1
+W1 <- owin( c(-0.206* 111000 ,-0.106* 111000), c(51.52* 111000,51.57* 111000) )
+endtable = data.frame(table(findf2$Crime.type))
+finppp <- as.ppp(findf1, W = W1)
+finantisocial <- subset(findf2, Crime.type == "Anti-social behaviour")
+finantisocialppp <- as.ppp(finantisocial, W = W1)
+finbictheft <- subset(findf2, Crime.type == "Bicycle theft")
+finbictheftppp <- as.ppp(finbictheft, W = W1)
+finBurglary <- subset(findf2, Crime.type == "Burglary")
+finBurglaryppp <- as.ppp(finBurglary, W = W1)
+fincrimdama <- subset(findf2, Crime.type == "Criminal damage and arson")
+fincrimdamappp <- as.ppp(fincrimdama, W = W1)
+finDrugs <- subset(findf2, Crime.type == "Drugs")
+finDrugsppp <- as.ppp(finDrugs, W = W1)
+finothac <- subset(findf2, Crime.type == "Other crime")
+finothacppp <- as.ppp(finothac, W = W1)
+finotherthief <- subset(findf2, Crime.type == "Other theft")
+finotherthiefppp <- as.ppp(finotherthief, W = W1)
+finweapon <- subset(findf2, Crime.type == "Possession of weapons")
+finweaponppp <- as.ppp(finweapon, W = W1)
+finorda <- subset(findf2, Crime.type == "Public order")
+finordappp <- as.ppp(finorda, W = W1)
+finRobbery <- subset(findf2, Crime.type == "Robbery")
+finRobberyppp <- as.ppp(finRobbery, W = W1)
+finShoplifting <- subset(findf2, Crime.type == "Shoplifting")
+finShopliftingppp <- as.ppp(finShoplifting, W = W1)
+finpersontheft <- subset(findf2, Crime.type == "Theft from the person")
+finpersontheftppp <- as.ppp(finpersontheft, W = W1)
+fincar <- subset(findf2, Crime.type == "Vehicle crime")
+fincarppp <- as.ppp(fincar, W = W1)
+finviolen <- subset(findf2, Crime.type == "Violence and sexual offences")
+finviolenppp <- as.ppp(finviolen, W = W1)
+
+ggplot(data=endtable, aes(x=endtable$Var1, y=endtable$Freq, color =endtable$Var1 )) +
+  geom_bar(stat="identity") + theme(axis.text.x = element_blank()) + labs(title = "Crimes committed broken down into types", x = "Type of Crime", y = "Number of Crimes", color = 'Type of Crime')
+```
+```{r pressure1, echo=FALSE}
+
+mutli = ppp(c(finpersontheftppp$x, finotherthiefppp$x),c(finpersontheftppp$y, finotherthiefppp$y), marks=factor(c(rep("Personal Theft",finpersontheftppp$n),rep("Other theft",finotherthiefppp$n))), W1)
+
+plot(Kcross(mutli), xlab = "Distance in meters", main = "", legend = "")
+Lcross1 = Lcross(mutli)
+Lcross1$border =Lcross1$border -Lcross1$r
+Lcross1$trans =Lcross1$trans -Lcross1$r
+Lcross1$iso =Lcross1$iso -Lcross1$r
+Lcross1$theo =Lcross1$theo -Lcross1$r
+plot(Lcross1, xlab = "Distance in meters", main = "", legend = "")
+Ktestcross = envelope(mutli, fun = Lcross, nsim = 10000)
+Ktestcross$hi =Ktestcross$hi -Ktestcross$r
+Ktestcross$lo =Ktestcross$lo -Ktestcross$r
+Ktestcross$obs =Ktestcross$obs -Ktestcross$r
+Ktestcross$theo =Ktestcross$theo -Ktestcross$r
+plot(Ktestcross, xlab = "Distance in meters", main = "", legend = "")
+Ktestcross
+madKtestcross = mad.test(mutli, fun = Lcross, nsim = 10000)
+```
+
+```{r pressure2, echo=FALSE}
+plot(Kcross.inhom(mutli), xlab = "Distance in meters", main = "", legend = "")
+Lcrossinhom1 = Lcross.inhom(mutli)
+Lcrossinhom1$border =Lcrossinhom1$border -Lcrossinhom1$r
+Lcrossinhom1$trans =Lcrossinhom1$trans -Lcrossinhom1$r
+Lcrossinhom1$iso =Lcrossinhom1$iso -Lcrossinhom1$r
+Lcrossinhom1$theo =Lcrossinhom1$theo -Lcrossinhom1$r
+plot(Lcross1, xlab = "Distance in meters", main = "", legend = "")
+Ktestcrossinhom = envelope(mutli, fun = Lcross.inhom, nsim = 10000)
+plot(Ktestcrossinhom)
+Ktestcrossinhom$hi =Ktestcrossinhom$hi - Ktestcrossinhom$r
+Ktestcrossinhom$lo =Ktestcrossinhom$lo - Ktestcrossinhom$r
+Ktestcrossinhom$obs =Ktestcrossinhom$obs - Ktestcrossinhom$r
+Ktestcrossinhom$theo =Ktestcrossinhom$theo - Ktestcrossinhom$r
+plot(Ktestcrossinhom, xlab = "Distance in meters", main = "", legend = "")
+Ktestcrossinhom
+madKtestcrossinhom = mad.test(mutli, fun = Lcross.inhom, nsim = 10000)
+```
+
+```{r pressure3, echo=FALSE}
+plot(Gest(finpersontheftppp), xlab = "Distance in meters", main = "", legend = "")
+plot(Gest(finotherthiefppp), xlab = "Distance in meters", main = "", legend = "")
+Gtest1 = envelope(finpersontheftppp, fun = Gest, nsim = 10000)
+Gtest2 = envelope(finotherthiefppp, fun = Gest, nsim = 10000)
+plot(Gtest1, xlab = "Distance in meters", main = "", legend = "", xlim = c(0,40))
+plot(Gtest2, xlab = "Distance in meters", main = "", legend = "", xlim = c(0,40))
+madgtest = mad.test(finpersontheftppp, fun = Gest, nsim = 10000)
+madgtest1 = mad.test(finotherthiefppp, fun = Gest, nsim = 10000)
+```
+
+```{r pressure4, echo=FALSE}
+plot(Ginhom(finpersontheftppp), xlab = "Distance in meters", main = "", legend = "")
+plot(Ginhom(finotherthiefppp), xlab = "Distance in meters", main = "", legend = "")
+Gtestinhom1 = envelope(finpersontheftppp, fun = Ginhom, nsim = 10000)
+Gtestinhom2 = envelope(finotherthiefppp, fun = Ginhom, nsim = 10000)
+plot(Gtestinhom1, xlab = "Distance in meters", main = "", legend = "", xlim = c(0,20))
+plot(Gtestinhom2, xlab = "Distance in meters", main = "", legend = "", xlim = c(0,20))
+#madgtestinhom = mad.test(finpersontheftppp, fun = Ginhom, nsim = 10000)
+#madgtestinhom1 = mad.test(finotherthiefppp, fun = Ginhom, nsim = 10000)
+```
+

@@ -1,0 +1,123 @@
+---
+title: "Untitled"
+author: "CID:02048495"
+date: "2023-06-11"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars, echo=TRUE, message=FALSE, warning=FALSE}
+library(spatstat)
+setwd("C:/Users/victo/OneDrive/Desktop/project")
+metdf <- read.table('smolmerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "character","NULL","NULL","NULL", "NULL"))
+citydf <- read.table('citymerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "character","NULL","NULL","NULL", "NULL"))
+
+findf = rbind(metdf, citydf)
+findf1 <- subset(findf,Latitude > 51.29677 )
+findf1 <- subset(findf1,Latitude < 51.70684 )
+findf1 <- subset(findf1,Longitude > -0.497698)
+findf1 <- subset(findf1,Longitude < 0.252656)
+findf1$Latitude = findf1$Latitude * 111000
+findf1$Longitude = findf1$Longitude * 111000
+midpointloc1 = aggregate(Longitude~ LSOA.code, findf1, mean )
+midpointloc2 = aggregate(Latitude~ LSOA.code, findf1, mean )
+midpointloc = merge(midpointloc1, midpointloc2, by = "LSOA.code")
+colnames(midpointloc)[1] = "LSOA.code"
+W1 <- owin( c(-0.497698* 111000 ,0.252656* 111000), c(51.29677* 111000,51.70684* 111000) )
+finppp <- as.ppp(findf1, W = W1)
+table = data.frame(table(findf1$LSOA.code))
+colnames(table)[1] = "LSOA.code"
+covariates <- read.table('Predictors.csv',sep=",",header =TRUE)
+truvariate = cbind(covariates[1], covariates[7:31])
+colnames(truvariate)[1]= "LSOA.code"
+mergito = merge(findf1,truvariate, by = "LSOA.code")[2:28]
+coolppp = as.ppp(mergito[1:2], W = W1)
+tablemerge = merge(table,truvariate, by = "LSOA.code")
+Thelastone = merge(midpointloc,tablemerge, by = "LSOA.code")
+# weight it 
+# Thelastone[5:29] = Thelastone[5:29] * Thelastone$Freq
+```
+
+```{r pressure, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+#rescale to 256
+dwelerdensensity = round(256 * data.frame(Thelastone$Dwelling.Density - min(Thelastone$Dwelling.Density))/(max(Thelastone$Dwelling.Density) - min(Thelastone$Dwelling.Density)))
+colnames(dwelerdensensity)[1] = "val"
+
+ownerproportion= round(256 * data.frame(Thelastone$Owner.Proportion - min(Thelastone$Owner.Proportion))/(max(Thelastone$Owner.Proportion) - min(Thelastone$Owner.Proportion)))
+colnames(ownerproportion)[1] = "val"
+
+airqualityindicator= round(256 * data.frame(Thelastone$Air.Quality.Indicator - min(Thelastone$Air.Quality.Indicator))/(max(Thelastone$Air.Quality.Indicator) - min(Thelastone$Air.Quality.Indicator)))
+colnames(airqualityindicator)[1] = "val"
+
+youthpopulation= round(256 * data.frame(Thelastone$Youth.Population - min(Thelastone$Youth.Population))/(max(Thelastone$Youth.Population) - min(Thelastone$Youth.Population)))
+colnames(youthpopulation)[1] = "val"
+
+setloc = Thelastone[2:3]
+
+dwelerpoints = data.frame()
+for (i in 1:4191 ){
+  print(i)
+  for (j in 1:dwelerdensensity$val[i])
+  dwelerpoints = rbind(dwelerpoints, setloc[i, ])
+}
+plot(density(as.ppp(dwelerpoints, W = W1), sigma = 1000))
+
+ownerproportionpoints = data.frame()
+for (i in 1:4191 ){
+  print(i)
+  for (j in 1:ownerproportion$val[i])
+  ownerproportionpoints = rbind(ownerproportionpoints, setloc[i, ])
+}
+plot(density(as.ppp(ownerproportionpoints, W = W1), sigma = 1000))
+
+airqualityindicatorpoints = data.frame()
+for (i in 1:4191 ){
+  print(i)
+  for (j in 1:airqualityindicator$val[i])
+  airqualityindicatorpoints = rbind(airqualityindicatorpoints, setloc[i, ])
+}
+plot(density(as.ppp(airqualityindicatorpoints, W = W1), sigma = 1000))
+
+youthpopulationpoints = data.frame()
+for (i in 1:4191 ){
+  print(i)
+  for (j in 1:youthpopulation$val[i])
+  youthpopulationpoints = rbind(youthpopulationpoints, setloc[i, ])
+}
+plot(density(as.ppp(youthpopulationpoints, W = W1), sigma = 1000))
+
+
+testedppp1 = as.ppp(Thelastone[2:3], W = W1)
+densityim1 = density(as.ppp(dwelerpoints, W = W1), sigma = 0.1)
+densityim2 = density(as.ppp(ownerproportionpoints, W = W1), sigma = 0.1)
+densityim3 = density(as.ppp(airqualityindicatorpoints, W = W1), sigma = 0.1)
+densityim4 = density(as.ppp(youthpopulationpoints, W = W1), sigma = 0.1)
+testppm = ppm(testedppp1, ~densityim1+densityim2+densityim3+densityim4)
+
+plot(effectfun( ppm(testedppp1, ~densityim1), se.fit=TRUE, main = ""))
+plot(effectfun( ppm(testedppp1, ~densityim2), se.fit=TRUE, main = ""))
+plot(effectfun( ppm(testedppp1, ~densityim3), se.fit=TRUE, main = ""))
+plot(effectfun( ppm(testedppp1, ~densityim4), se.fit=TRUE, main = ""))
+
+plot(predict(testppm))
+plot(ppm, how = "persp", theta = 30)
+library(RColorBrewer)
+a2 = colorRampPalette(colors = c("#BFFFFF", "#5F87BE"))(50)
+a3 = colorRampPalette(colors = c("#5F87BE", "#021380"))(1000)
+plot(predict(testppm), col = c(a2,a3))
+plot(blur(predict(testppm), sigma =750), main = "")
+
+anova(testppm, test = "Chisq")
+```

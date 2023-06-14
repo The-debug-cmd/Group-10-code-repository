@@ -1,0 +1,109 @@
+---
+title: "Untitled"
+author: "CID:02048495"
+date: "2023-06-06"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(spatstat)
+library(ggplot2)
+setwd("C:/Users/victo/OneDrive/Desktop/project")
+
+metdf <- read.table('smolmerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "character","NULL","character","NULL", "NULL"))
+citydf <- read.table('citymerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "character","NULL","character","NULL", "NULL"))
+can = read.table('cam.csv',sep=",",header =TRUE)
+findf = rbind(metdf, citydf)
+findf1 <- subset(findf,Latitude > 51.29677 )
+findf1 <- subset(findf1,Latitude < 51.70684 )
+findf1 <- subset(findf1,Longitude > -0.497698)
+findf1 <- subset(findf1,Longitude < 0.252656)
+
+findf1$Latitude = findf1$Latitude * 111000
+findf1$Longitude = findf1$Longitude * 111000
+
+findf2 = findf1
+W1 <- owin( c(-0.497698* 111000 ,0.252656* 111000), c(51.29677* 111000,51.70684* 111000) )
+endtable = data.frame(table(findf2$Crime.type))
+finppp <- as.ppp(findf1, W = W1)
+finantisocial <- subset(findf2, Crime.type == "Anti-social behaviour")
+finantisocialppp <- as.ppp(finantisocial, W = W1)
+finbictheft <- subset(findf2, Crime.type == "Bicycle theft")
+finbictheftppp <- as.ppp(finbictheft, W = W1)
+finBurglary <- subset(findf2, Crime.type == "Burglary")
+finBurglaryppp <- as.ppp(finBurglary, W = W1)
+fincrimdama <- subset(findf2, Crime.type == "Criminal damage and arson")
+fincrimdamappp <- as.ppp(fincrimdama, W = W1)
+finDrugs <- subset(findf2, Crime.type == "Drugs")
+finDrugsppp <- as.ppp(finDrugs, W = W1)
+finothac <- subset(findf2, Crime.type == "Other crime")
+finothacppp <- as.ppp(finothac, W = W1)
+finotherthief <- subset(findf2, Crime.type == "Other theft")
+finotherthiefppp <- as.ppp(finotherthief, W = W1)
+finweapon <- subset(findf2, Crime.type == "Possession of weapons")
+finweaponppp <- as.ppp(finweapon, W = W1)
+finorda <- subset(findf2, Crime.type == "Public order")
+finordappp <- as.ppp(finorda, W = W1)
+finRobbery <- subset(findf2, Crime.type == "Robbery")
+finRobberyppp <- as.ppp(finRobbery, W = W1)
+finShoplifting <- subset(findf2, Crime.type == "Shoplifting")
+finShopliftingppp <- as.ppp(finShoplifting, W = W1)
+finpersontheft <- subset(findf2, Crime.type == "Theft from the person")
+finpersontheftppp <- as.ppp(finpersontheft, W = W1)
+fincar <- subset(findf2, Crime.type == "Vehicle crime")
+fincarppp <- as.ppp(fincar, W = W1)
+finviolen <- subset(findf2, Crime.type == "Violence and sexual offences")
+finviolenppp <- as.ppp(finviolen, W = W1)
+
+ggplot(data=endtable, aes(x=endtable$Var1, y=endtable$Freq, color =endtable$Var1 )) +
+  geom_bar(stat="identity") + theme(axis.text.x = element_blank()) + labs(title = "Crimes committed broken down into types", x = "Type of Crime", y = "Number of Crimes", color = 'Type of Crime')
+
+plot(Kest(as.ppp(findf1, W = W1)), xlab = "Distance in meters", main = "K function for Drug data")
+Lest1 = Lest(findf1)
+Lest1$border =Lest1$border -Lest1$r
+Lest1$theo =Lest1$theo -Lest1$r
+plot(Lest1, xlab = "Distance in meters", main = "L(r) - r graph function for Drug data")
+Ktest = envelope(as.ppp(findf1, W = W1), fun = Lest, nsim = 10000)
+Ktest$hi =Ktest$hi -Ktest$r
+Ktest$lo =Ktest$lo -Ktest$r
+Ktest$obs =Ktest$obs -Ktest$r
+Ktest$theo =Ktest$theo -Ktest$r
+plot(Ktest, xlab = "Distance in meters", main = "L(r) - r graph for Drug data")
+Ktest
+madKtest = mad.test(as.ppp(findf1, W = W1), fun = Lest, nsim = 10)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r 1}
+
+plot(Kinhom(as.ppp(findf1, W = W1)), xlab = "Distance in meters", main = "K function for Drug data")
+Linhom1 = Linhom(as.ppp(findf1, W = W1))
+Linhom1$border =Linhom1$border -Linhom1$r
+Linhom1$theo =Linhom1$theo -Linhom1$r
+plot(Linhom1, xlab = "Distance in meters", main = "L(r) - r graph function for Drug data")
+Ktestinhom = envelope(as.ppp(findf1, W = W1), fun = Linhom, nsim = 100)
+Ktestinhom$hi =Ktestinhom$hi -Ktestinhom$r
+Ktestinhom$lo =Ktestinhom$lo -Ktestinhom$r
+Ktestinhom$obs =Ktestinhom$obs -Ktestinhom$r
+Ktestinhom$theo =Ktestinhom$theo -Ktestinhom$r
+plot(Ktestinhom, xlab = "Distance in meters", main = "L(r) - r graph for Drug data")
+#madKtestinhom = mad.test(as.ppp(findf1, W = W1), fun = Linhom, nsim = 100)
+```
+`
+

@@ -1,0 +1,189 @@
+---
+title: "Exploratory data"
+author: "CID:02048495"
+date: "2023-05-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+#summary stats
+
+```{r 1, message=FALSE, warning=FALSE, out.width="1\\linewidth"}
+library(spatstat)
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+library(ggpubr)
+setwd("C:/Users/victo/OneDrive/Desktop/project")
+metdf <- read.table('smolmerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "NULL","NULL","character","NULL", "NULL"))
+citydf <- read.table('citymerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","numeric","numeric", "NULL", "NULL","NULL","character","NULL", "NULL"))
+crimefinaldf = rbind(metdf, citydf)
+metcorddf <- read.table('citymerge.csv',sep=",",header =TRUE, colClasses = c( "NULL", "NULL", "NULL", "NULL","NULL","NULL", "NULL", "character","NULL","character","NULL", "NULL") )
+index = (metcorddf$LSOA.code != "")
+metcorddf = metcorddf[index, ]
+
+metdf1 <- subset(crimefinaldf,Latitude > 51.29677 )
+metdf1 <- subset(metdf1,Latitude < 51.70684 )
+metdf1 <- subset(metdf1,Longitude > -0.497698)
+metdf1 <- subset(metdf1,Longitude < 0.252656)
+table = data.frame(table(metdf1$Crime.type))
+table = table[2:15, ]
+ a <- colorRampPalette(colors = c("white", "#7532a8"))(14)
+a2 = colorRampPalette(colors = c("#7532a8", "white"))(1000)
+ggplot(data=table, aes(x=table$Var1, y=table$Freq, fill=table$Var1)) + geom_col()+
+  geom_bar(stat="identity") + labs(title = "", x = "Type of Crime", y = "Number of Crimes", color = 'Type of Crime')+geom_text(aes(label = table$Freq), hjust =-.1)+coord_flip(clip = "off") + scale_fill_manual(values = a)+ theme(legend.position="none")
+df2 <- metdf1
+W <- owin( c(-0.497698 ,0.252656), c(51.29677,51.70684) )
+metppp <- as.ppp(metdf1, W = W)
+plot(metppp, main = "Plot of the combined crime data")
+antisocial <- subset(df2, Crime.type == "Anti-social behaviour")
+antisocialppp <- as.ppp(antisocial, W = W)
+bictheft <- subset(df2, Crime.type == "Bicycle theft")
+bictheftppp <- as.ppp(bictheft, W = W)
+Burglary <- subset(df2, Crime.type == "Burglary")
+Burglaryppp <- as.ppp(Burglary, W = W)
+crimdama <- subset(df2, Crime.type == "Criminal damage and arson")
+crimdamappp <- as.ppp(crimdama, W = W)
+Drugs <- subset(df2, Crime.type == "Drugs")
+Drugsppp <- as.ppp(Drugs, W = W)
+othac <- subset(df2, Crime.type == "Other crime")
+othacppp <- as.ppp(othac, W = W)
+otherthief <- subset(df2, Crime.type == "Other theft")
+otherthiefppp <- as.ppp(otherthief, W = W)
+weapon <- subset(df2, Crime.type == "Possession of weapons")
+weaponppp <- as.ppp(weapon, W = W)
+orda <- subset(df2, Crime.type == "Public order")
+ordappp <- as.ppp(orda, W = W)
+Robbery <- subset(df2, Crime.type == "Robbery")
+Robberyppp <- as.ppp(Robbery, W = W)
+Shoplifting <- subset(df2, Crime.type == "Shoplifting")
+Shopliftingppp <- as.ppp(Shoplifting, W = W)
+persontheft <- subset(df2, Crime.type == "Theft from the person")
+persontheftppp <- as.ppp(persontheft, W = W)
+car <- subset(df2, Crime.type == "Vehicle crime")
+carppp <- as.ppp(car, W = W)
+violen <- subset(df2, Crime.type == "Violence and sexual offences")
+violenppp <- as.ppp(violen, W = W)
+par(mfrow=c(1,2)) 
+plot(unmark(carppp), main = "Plot of the car related crime data")
+plot(unmark(Robberyppp), main = "Plot of the robbery related crime data")
+```
+
+#Heatmap
+
+```{r 2, message=FALSE, warning=FALSE, out.width="1\\linewidth"}
+library(sp)
+library(mapproj)
+library(rgeos)
+library(rgdal)
+library(stringr)
+map <- readOGR("C:/Users/victo/OneDrive/Desktop/project", layer = "London_Ward_CityMerged")
+map1 <- fortify(map, GSS_CODE)
+map2 = data.frame(map1$lat/10000,map1$long/10000,map1$order,map1$hole,map1$piece,map1$id,map1$group)
+proj4string(map) <- CRS("+init=epsg:27700")
+map1.wgs84 <- spTransform(map, CRS("+init=epsg:4326"))
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = metdf1, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = antisocial, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Anti-social behaviour crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = bictheft, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Bicycle theft crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = Burglary, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Burglary crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = crimdama, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Criminal damage and arson crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = Drugs, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('	
+Drug crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = othac, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c(' 6
+Other crime crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = otherthief, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Other theft crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = weapon, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Possession of weapons crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = orda, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c(' Public order crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = Robbery, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('	
+Robbery crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = Shoplifting, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Shoplifting crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = persontheft, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Theft from the person crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = car, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c(' 	
+Vehicle crime crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+ggplot(map1.wgs84) + geom_polygon(aes(x = long, y = lat, group = group), fill = "white", colour = "black") +  stat_density2d(data = violen, aes(x = Longitude, y = Latitude, fill = ..density..), geom = 'tile', contour = F, alpha = 0.9)+ labs(title = str_c('Violence and sexual offences crimes committed in Greater London between January 2023 to March 2023'),fill = str_c('Number of', '\ncrime incidents'), x = "Longitude", y = "Latitude")
+```
+#correlation matrix and plots
+```{r 3, warning=FALSE, out.width="1\\linewidth"}
+index1 = (metcorddf$Crime.type == "Anti-social behaviour")
+AntiSocialdf = metcorddf[index1, ]
+AntiSocialTable = data.frame(table(AntiSocialdf$LSOA.code))
+index2 = (metcorddf$Crime.type == "Bicycle theft")
+BicycleTheftdf = metcorddf[index2, ]
+BicycleTheftTable = data.frame(table(BicycleTheftdf$LSOA.code))
+index3 = (metcorddf$Crime.type == "Burglary")
+Burglarydf = metcorddf[index3, ]
+BurglaryTable = data.frame(table(Burglarydf$LSOA.code))
+index4 = (metcorddf$Crime.type == "Criminal damage and arson")
+CriminalDamageAndArsondf = metcorddf[index4, ]
+CriminalDamageAndArsonTable = data.frame(table(CriminalDamageAndArsondf$LSOA.code))
+index5 = (metcorddf$Crime.type == "Drugs")
+Drugsdf = metcorddf[index5, ]
+DrugsTable = data.frame(table(Drugsdf$LSOA.code))
+index6 = (metcorddf$Crime.type == "Other crime")
+OtherCrimedf = metcorddf[index6, ]
+OtherCrimeTable = data.frame(table(OtherCrimedf$LSOA.code))
+index7 = (metcorddf$Crime.type == "Other theft")
+OtherTheftdf = metcorddf[index7, ]
+OtherTheftTable = data.frame(table(OtherTheftdf$LSOA.code))
+index8 = (metcorddf$Crime.type == "Possession of weapons")
+PossessionOfWeaponsdf = metcorddf[index8, ]
+PossessionOfWeaponsTable = data.frame(table(PossessionOfWeaponsdf$LSOA.code))
+index9 = (metcorddf$Crime.type == "Public order")
+PublicOrderdf = metcorddf[index9, ]
+PublicOrderTable = data.frame(table(PublicOrderdf$LSOA.code))
+index10 = (metcorddf$Crime.type == "Robbery")
+Robberydf = metcorddf[index10, ]
+RobberyTable = data.frame(table(Robberydf$LSOA.code))
+index11 = (metcorddf$Crime.type == "Shoplifting")
+Shopliftingdf = metcorddf[index11, ]
+ShopliftingTable = data.frame(table(Shopliftingdf$LSOA.code))
+index12 = (metcorddf$Crime.type == "Theft from the person")
+Theftfromthepersondf = metcorddf[index12, ]
+TheftfromthepersonTable = data.frame(table(Theftfromthepersondf$LSOA.code))
+index13 = (metcorddf$Crime.type == "Vehicle crime")
+Vehiclecrimedf = metcorddf[index13, ]
+VehiclecrimeTable = data.frame(table(Vehiclecrimedf$LSOA.code))
+index14 = (metcorddf$Crime.type == "Violence and sexual offences")
+Violenceandsexualoffencesdf = metcorddf[index14, ]
+ViolenceandsexualoffencesTable = data.frame(table(Violenceandsexualoffencesdf$LSOA.code))
+
+totaled = merge(x = AntiSocialTable, y = BicycleTheftTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = BurglaryTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = CriminalDamageAndArsonTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = DrugsTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = OtherCrimeTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = OtherTheftTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = PossessionOfWeaponsTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = PublicOrderTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = RobberyTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = ShopliftingTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = TheftfromthepersonTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = VehiclecrimeTable, by = "Var1", all = TRUE)
+totaled = merge(x = totaled, y = ViolenceandsexualoffencesTable, by = "Var1", all = TRUE)
+totaled[is.na(totaled)] <- 0
+colnames(totaled)[1] = "LSOA Code"
+colnames(totaled)[2] = "Anti-social behaviour"
+colnames(totaled)[3] = "Bicycle theft"
+colnames(totaled)[4] = "Burglary"
+colnames(totaled)[5] = "Criminal damage and arson"
+colnames(totaled)[6] = "Drugs"
+colnames(totaled)[7] = "Other crime"
+colnames(totaled)[8] = "Other theft"
+colnames(totaled)[9] = "Possession of weapons"
+colnames(totaled)[10] = "Public order"
+colnames(totaled)[11] = "Robbery"
+colnames(totaled)[12] = "Shoplifting"
+colnames(totaled)[13] = "Theft from the person"
+colnames(totaled)[14] = "Vehicle crime"
+colnames(totaled)[15] = "Violence and sexual offences"
+
+af = data.frame(cor(totaled[2:15]))
+af<-round(af,2)
+plot(totaled$`Other theft`,totaled$`Theft from the person`, xlab = "Crimes of type Other theft", ylab = "Crimes of type Theft from the person", title = "A")
+
+
+```
+
