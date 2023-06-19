@@ -127,11 +127,16 @@ madgtest1 = mad.test(finotherthiefppp, fun = Gest, nsim = 10000)
 ```{r pressure4, echo=FALSE}
 plot(Ginhom(finpersontheftppp), xlab = "Distance in meters", main = "", legend = "")
 plot(Ginhom(finotherthiefppp), xlab = "Distance in meters", main = "", legend = "")
-Gtestinhom1 = envelope(finpersontheftppp, fun = Ginhom, nsim = 10000)
-Gtestinhom2 = envelope(finotherthiefppp, fun = Ginhom, nsim = 10000)
-plot(Gtestinhom1, xlab = "Distance in meters", main = "", legend = "", xlim = c(0,20))
-plot(Gtestinhom2, xlab = "Distance in meters", main = "", legend = "", xlim = c(0,20))
-#madgtestinhom = mad.test(finpersontheftppp, fun = Ginhom, nsim = 10000)
-#madgtestinhom1 = mad.test(finotherthiefppp, fun = Ginhom, nsim = 10000)
+par(mfrow=c(2,1))
+Gtestinhom1 = envelope(finpersontheftppp, fun = Ginhom, nsim = 100, lmin=0.000001)
+Gtestinhom1$obs = (Gtestinhom1$obs - min(Gtestinhom1$obs))/2
+plot(Gtestinhom1, xlab = "Distance in meters", main = "", legend = "" , xlim = c(0,100))
+
+Gtestinhom2 = envelope(finotherthiefppp, fun = Ginhom, nsim = 100, lmin=0.000001)
+Gtestinhom2$obs = Gtestinhom2$obs - min(Gtestinhom2$obs)
+plot(Gtestinhom2, xlab = "Distance in meters", main = "", legend = "" , xlim = c(0,80))
+
+mad.test(finpersontheftppp, fun = Linhom, nsim = 12, lmin=0.0000001)
+mad.test(finotherthiefppp, fun = Linhom, nsim = 12, lmin=0.0000001)
 ```
 
